@@ -61,6 +61,7 @@ typedef struct {
     vesc_flux_linkage_response_t flux_linkage_response; // Internal storage for flux linkage detection response
     vesc_flux_linkage_openloop_response_t flux_linkage_openloop_response; // Internal storage for flux linkage openloop detection response
     bool initialized;
+    void *user_cookie;
 #ifdef _WIN32
     CRITICAL_SECTION mutex;
 #elif __linux__
@@ -253,7 +254,7 @@ static bool vesc_can_send_packet(uint32_t id, const uint8_t *data, uint8_t len) 
         }
     }
     
-    return sdk_state.can_send_func(id, data, len);
+    return sdk_state.can_send_func(id, data, len, sdk_state.user_cookie);
 }
 
 /**
@@ -627,7 +628,7 @@ static void vesc_process_can_frame_internal(uint32_t id, const uint8_t *data, ui
                         if (sdk_state.response_callback) {
                             // Add safety check for callback parameters
                                 sdk_state.response_callback(controller_id, command, 
-                                                        sdk_state.rx_buffers[buf_idx].buffer, length);
+                                                        sdk_state.rx_buffers[buf_idx].buffer, length, sdk_state.user_cookie);
                         }
                     } else {
                         printf("ERROR: Invalid buffer access in callback (buf_idx=%d, length=%d)\n", 
@@ -694,7 +695,7 @@ static void vesc_process_can_frame_internal(uint32_t id, const uint8_t *data, ui
 
             vesc_process_can_frame_and_store_information(controller_id, packet_type, data, len);
             if (sdk_state.response_callback) {
-                sdk_state.response_callback(controller_id, command, data + index, len - 3);
+                sdk_state.response_callback(controller_id, command, data + index, len - 3, sdk_state.user_cookie);
             } else {
                 printf("No response callback: len=%d\n", len);
             }
@@ -722,7 +723,7 @@ static void vesc_process_can_frame_internal(uint32_t id, const uint8_t *data, ui
             // Direct packet - call callback
             vesc_process_can_frame_and_store_information(controller_id, packet_type, data, len);
             if (sdk_state.response_callback) {
-                sdk_state.response_callback(controller_id, packet_type, data, len);
+                sdk_state.response_callback(controller_id, packet_type, data, len, sdk_state.user_cookie);
             }
             
             break;
@@ -760,7 +761,7 @@ static void vesc_send_command(uint8_t controller_id, const uint8_t *data, uint32
 // Public API Implementation
 // ============================================================================
 
-bool vesc_can_init(vesc_can_send_func_t can_send_func, uint8_t receiver_controller_id, uint8_t sender_id) {
+bool vesc_can_init(vesc_can_send_func_t can_send_func, uint8_t receiver_controller_id, uint8_t sender_id, void *user_cookie) {
     if (!can_send_func) {
         return false;
     }
@@ -769,6 +770,7 @@ bool vesc_can_init(vesc_can_send_func_t can_send_func, uint8_t receiver_controll
     sdk_state.can_send_func = can_send_func;
     sdk_state.receiver_controller_id = receiver_controller_id;  // Receiver controller ID
     sdk_state.sender_id = sender_id;                            // Sender controller ID
+    sdk_state.user_cookie = user_cookie;
     sdk_state.initialized = true;
     
 #ifdef _WIN32

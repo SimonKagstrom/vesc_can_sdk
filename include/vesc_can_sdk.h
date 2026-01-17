@@ -332,10 +332,10 @@ typedef struct {
 // ============================================================================
 
 // CAN send function type - user must implement this
-typedef bool (*vesc_can_send_func_t)(uint32_t id, const uint8_t *data, uint8_t len);
+typedef bool (*vesc_can_send_func_t)(uint32_t id, const uint8_t *data, uint8_t len, void *user_cookie);
 
 // Response callback function type
-typedef void (*vesc_response_callback_t)(uint8_t controller_id, uint8_t command, const uint8_t *data, uint8_t len);
+typedef void (*vesc_response_callback_t)(uint8_t controller_id, uint8_t command, const uint8_t *data, uint8_t len, void *user_cookie);
 
 // ============================================================================
 // Core SDK Functions
@@ -346,13 +346,15 @@ typedef void (*vesc_response_callback_t)(uint8_t controller_id, uint8_t command,
  * 
  * @param can_send_func Pointer to user's CAN send function
  * @param receiver_controller_id Receiver controller ID (0-255) to listen for
+ * @param sender_id Sender controller ID (0-255) to use in commands
+ * @param user_cookie User-defined cookie passed to callbacks (can be NULL)
  * @return true on success, false on failure
  */
-bool vesc_can_init(vesc_can_send_func_t can_send_func, uint8_t receiver_controller_id, uint8_t sender_id);
+bool vesc_can_init(vesc_can_send_func_t can_send_func, uint8_t receiver_controller_id, uint8_t sender_id, void *user_cookie);
 
 /**
  * Set the response callback function
- * 
+ *
  * @param callback Pointer to callback function
  */
 void vesc_set_response_callback(vesc_response_callback_t callback);
