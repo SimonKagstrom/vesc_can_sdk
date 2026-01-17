@@ -332,10 +332,10 @@ typedef struct {
 // ============================================================================
 
 // CAN send function type - user must implement this
-typedef bool (*vesc_can_send_func_t)(uint32_t id, uint8_t *data, uint8_t len);
+typedef bool (*vesc_can_send_func_t)(uint32_t id, const uint8_t *data, uint8_t len);
 
 // Response callback function type
-typedef void (*vesc_response_callback_t)(uint8_t controller_id, uint8_t command, uint8_t *data, uint8_t len);
+typedef void (*vesc_response_callback_t)(uint8_t controller_id, uint8_t command, const uint8_t *data, uint8_t len);
 
 // ============================================================================
 // Core SDK Functions
@@ -388,7 +388,7 @@ uint8_t vesc_get_sender_controller_id(void);
  * @param data CAN data
  * @param len Data length
  */
-void vesc_process_can_frame(uint32_t id, uint8_t *data, uint8_t len);
+void vesc_process_can_frame(uint32_t id, const uint8_t *data, uint8_t len);
 
 /**
  * This function returns the most recent motor R/L response.
@@ -592,7 +592,7 @@ void vesc_ping(uint8_t controller_id);
  * @param values Pointer to values structure
  * @return true on success, false on failure
  */
-bool vesc_parse_get_values(uint8_t *data, uint8_t len, vesc_values_t *values);
+bool vesc_parse_get_values(const uint8_t *data, uint8_t len, vesc_values_t *values);
 
 /**
  * Parse motor R/L detection response
@@ -602,7 +602,7 @@ bool vesc_parse_get_values(uint8_t *data, uint8_t len, vesc_values_t *values);
  * @param response Pointer to response structure
  * @return true on success, false on failure
  */
-bool vesc_parse_motor_rl_response(uint8_t *data, uint8_t len, vesc_motor_rl_response_t *response);
+bool vesc_parse_motor_rl_response(const uint8_t *data, uint8_t len, vesc_motor_rl_response_t *response);
 
 /**
  * Parse motor parameter detection response
@@ -612,7 +612,7 @@ bool vesc_parse_motor_rl_response(uint8_t *data, uint8_t len, vesc_motor_rl_resp
  * @param response Pointer to response structure
  * @return true on success, false on failure
  */
-bool vesc_parse_motor_param_response(uint8_t *data, uint8_t len, vesc_motor_param_response_t *response);
+bool vesc_parse_motor_param_response(const uint8_t *data, uint8_t len, vesc_motor_param_response_t *response);
 
 /**
  * Parse flux linkage detection response
@@ -622,7 +622,7 @@ bool vesc_parse_motor_param_response(uint8_t *data, uint8_t len, vesc_motor_para
  * @param response Pointer to response structure
  * @return true on success, false on failure
  */
-bool vesc_parse_flux_linkage_response(uint8_t *data, uint8_t len, vesc_flux_linkage_response_t *response);
+bool vesc_parse_flux_linkage_response(const uint8_t *data, uint8_t len, vesc_flux_linkage_response_t *response);
 
 /**
  * Parse flux linkage detection open loop response
@@ -632,7 +632,7 @@ bool vesc_parse_flux_linkage_response(uint8_t *data, uint8_t len, vesc_flux_link
  * @param response Pointer to response structure
  * @return true on success, false on failure
  */
-bool vesc_parse_flux_linkage_openloop_response(uint8_t *data, uint8_t len, vesc_flux_linkage_openloop_response_t *response);
+bool vesc_parse_flux_linkage_openloop_response(const uint8_t *data, uint8_t len, vesc_flux_linkage_openloop_response_t *response);
 
 /**
  * Parse ADC values response
@@ -642,7 +642,7 @@ bool vesc_parse_flux_linkage_openloop_response(uint8_t *data, uint8_t len, vesc_
  * @param values Pointer to ADC values structure
  * @return true on success, false on failure
  */
-bool vesc_parse_adc_values(uint8_t *data, uint8_t len, vesc_adc_values_t *values);
+bool vesc_parse_adc_values(const uint8_t *data, uint8_t len, vesc_adc_values_t *values);
 
 /**
  * Parse PPM values response
@@ -652,7 +652,7 @@ bool vesc_parse_adc_values(uint8_t *data, uint8_t len, vesc_adc_values_t *values
  * @param values Pointer to PPM values structure
  * @return true on success, false on failure
  */
-bool vesc_parse_ppm_values(uint8_t *data, uint8_t len, vesc_ppm_values_t *values);
+bool vesc_parse_ppm_values(const uint8_t *data, uint8_t len, vesc_ppm_values_t *values);
 
 /**
  * Parse chuck values response
@@ -662,7 +662,7 @@ bool vesc_parse_ppm_values(uint8_t *data, uint8_t len, vesc_ppm_values_t *values
  * @param values Pointer to chuck values structure
  * @return true on success, false on failure
  */
-bool vesc_parse_chuck_values(uint8_t *data, uint8_t len, vesc_chuck_values_t *values);
+bool vesc_parse_chuck_values(const uint8_t *data, uint8_t len, vesc_chuck_values_t *values);
 
 /**
  * Parse firmware version response
@@ -672,7 +672,7 @@ bool vesc_parse_chuck_values(uint8_t *data, uint8_t len, vesc_chuck_values_t *va
  * @param version Pointer to firmware version structure
  * @return true on success, false on failure
  */
-bool vesc_parse_fw_version(uint8_t *data, uint8_t len, vesc_fw_version_t *version);
+bool vesc_parse_fw_version(const uint8_t *data, uint8_t len, vesc_fw_version_t *version);
 
 // ============================================================================
 // Status Message Parsing Functions
@@ -686,7 +686,7 @@ bool vesc_parse_fw_version(uint8_t *data, uint8_t len, vesc_fw_version_t *versio
  * @param status Pointer to status message 1 structure
  * @return true on success, false on failure
  */
-bool vesc_parse_status_msg_1(uint8_t *data, uint8_t len, vesc_status_msg_1_t *status);
+bool vesc_parse_status_msg_1(const uint8_t *data, uint8_t len, vesc_status_msg_1_t *status);
 
 /**
  * Parse CAN_PACKET_STATUS_2 (Status Message 2) response
@@ -696,7 +696,7 @@ bool vesc_parse_status_msg_1(uint8_t *data, uint8_t len, vesc_status_msg_1_t *st
  * @param status Pointer to status message 2 structure
  * @return true on success, false on failure
  */
-bool vesc_parse_status_msg_2(uint8_t *data, uint8_t len, vesc_status_msg_2_t *status);
+bool vesc_parse_status_msg_2(const uint8_t *data, uint8_t len, vesc_status_msg_2_t *status);
 
 /**
  * Parse CAN_PACKET_STATUS_3 (Status Message 3) response
@@ -706,7 +706,7 @@ bool vesc_parse_status_msg_2(uint8_t *data, uint8_t len, vesc_status_msg_2_t *st
  * @param status Pointer to status message 3 structure
  * @return true on success, false on failure
  */
-bool vesc_parse_status_msg_3(uint8_t *data, uint8_t len, vesc_status_msg_3_t *status);
+bool vesc_parse_status_msg_3(const uint8_t *data, uint8_t len, vesc_status_msg_3_t *status);
 
 /**
  * Parse CAN_PACKET_STATUS_4 (Status Message 4) response
@@ -716,7 +716,7 @@ bool vesc_parse_status_msg_3(uint8_t *data, uint8_t len, vesc_status_msg_3_t *st
  * @param status Pointer to status message 4 structure
  * @return true on success, false on failure
  */
-bool vesc_parse_status_msg_4(uint8_t *data, uint8_t len, vesc_status_msg_4_t *status);
+bool vesc_parse_status_msg_4(const uint8_t *data, uint8_t len, vesc_status_msg_4_t *status);
 
 /**
  * Parse CAN_PACKET_STATUS_5 (Status Message 5) response
@@ -726,7 +726,7 @@ bool vesc_parse_status_msg_4(uint8_t *data, uint8_t len, vesc_status_msg_4_t *st
  * @param status Pointer to status message 5 structure
  * @return true on success, false on failure
  */
-bool vesc_parse_status_msg_5(uint8_t *data, uint8_t len, vesc_status_msg_5_t *status);
+bool vesc_parse_status_msg_5(const uint8_t *data, uint8_t len, vesc_status_msg_5_t *status);
 
 /**
  * Parse CAN_PACKET_STATUS_6 (Status Message 6) response
@@ -736,7 +736,7 @@ bool vesc_parse_status_msg_5(uint8_t *data, uint8_t len, vesc_status_msg_5_t *st
  * @param status Pointer to status message 6 structure
  * @return true on success, false on failure
  */
-bool vesc_parse_status_msg_6(uint8_t *data, uint8_t len, vesc_status_msg_6_t *status);
+bool vesc_parse_status_msg_6(const uint8_t *data, uint8_t len, vesc_status_msg_6_t *status);
 
 /**
  * Parse CAN_PACKET_PONG response
@@ -746,7 +746,7 @@ bool vesc_parse_status_msg_6(uint8_t *data, uint8_t len, vesc_status_msg_6_t *st
  * @param pong Pointer to pong response structure
  * @return true on success, false on failure
  */
-bool vesc_parse_pong_response(uint8_t *data, uint8_t len, vesc_pong_response_t *pong);
+bool vesc_parse_pong_response(const uint8_t *data, uint8_t len, vesc_pong_response_t *pong);
 
 // ============================================================================
 // Debug Functions

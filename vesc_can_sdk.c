@@ -129,7 +129,7 @@ static bool vesc_debug_category_enabled(uint16_t category) {
 /**
  * Print hex dump of data
  */
-static void vesc_debug_hex_dump(const char *prefix, uint8_t *data, uint8_t len) {
+static void vesc_debug_hex_dump(const char *prefix, const uint8_t *data, uint8_t len) {
     if (!debug_state.enabled || debug_state.config.level < VESC_DEBUG_DETAILED) {
         return;
     }
@@ -225,7 +225,7 @@ static const char* vesc_debug_get_packet_name(uint8_t packet_type) {
 /**
  * Send CAN packet with extended ID
  */
-static bool vesc_can_send_packet(uint32_t id, uint8_t *data, uint8_t len) {
+static bool vesc_can_send_packet(uint32_t id, const uint8_t *data, uint8_t len) {
     if (!sdk_state.initialized || !sdk_state.can_send_func) {
         return false;
     }
@@ -259,28 +259,27 @@ static bool vesc_can_send_packet(uint32_t id, uint8_t *data, uint8_t len) {
 /**
  * Send buffer using VESC packet fragmentation protocol
  */
-static void vesc_send_buffer(uint8_t controller_id, uint8_t *data, uint32_t len) {
+static void vesc_send_buffer(uint8_t controller_id, const uint8_t *data, uint32_t len) {
     if (len <= 6) {
         // Calculate CRC for the payload
-        uint8_t index = len;
         uint16_t crc = vesc_crc16(data, len);
-        data[index++] = (uint8_t)(crc >> 8);
-        data[index++] = (uint8_t)(crc & 0xFF);
-
-        // Append stop byte (char 3)
-        data[index++] = 3;
 
         // Buffer command structure is as follows for short buffer:
         // 0: identifier of sending controller
         // 1: flag to indicate if a result should be sent (possible values: 0, 1, 2, default is 0)
         // 2: command such as COMM_GET_VALUES or COMM_FW_VERSION
-        uint8_t short_buffer[8];
+        uint8_t short_buffer[10]; // at most 6 bytes data + 4 bytes overhead
+
         short_buffer[0] = sdk_state.sender_id;  // Use sender ID for first byte
         short_buffer[1] = 0;  // Flag to indicate if a result should be sent (possible values: 0, 1, 2, default is 0)
-        memcpy(short_buffer + 2, data, index);
-        
+        memcpy(short_buffer + 2, data, len);
+        short_buffer[len + 2] = (uint8_t)(crc >> 8);
+        short_buffer[len + 3] = (uint8_t)(crc & 0xFF);
+        // Append stop byte (char 3)
+        short_buffer[len + 4] = 3;
+
         uint32_t can_id = controller_id | ((uint32_t)CAN_PACKET_PROCESS_SHORT_BUFFER << 8);
-        vesc_can_send_packet(can_id, short_buffer, index + 1);
+        vesc_can_send_packet(can_id, short_buffer, len + 3);
     } else {
         // Long packet - fragment
         uint8_t send_buffer[8];
@@ -351,7 +350,7 @@ static void vesc_send_buffer(uint8_t controller_id, uint8_t *data, uint32_t len)
     }
 }
 
-static void vesc_process_can_frame_and_store_information(uint32_t controller_id, uint8_t command, uint8_t *data, uint8_t len) {
+static void vesc_process_can_frame_and_store_information(uint32_t controller_id, uint8_t command, const uint8_t *data, uint8_t len) {
     (void)controller_id;
     if (command == COMM_DETECT_MOTOR_R_L) {
         vesc_parse_motor_rl_response(data, len, &sdk_state.motor_rl_response);
@@ -365,7 +364,7 @@ static void vesc_process_can_frame_and_store_information(uint32_t controller_id,
 /**
  * Process received CAN frame
  */
-static void vesc_process_can_frame_internal(uint32_t id, uint8_t *data, uint8_t len) {
+static void vesc_process_can_frame_internal(uint32_t id, const uint8_t *data, uint8_t len) {
     uint8_t controller_id = id & 0xFF;
     uint8_t packet_type = (id >> 8) & 0xFF;
     
@@ -733,7 +732,7 @@ static void vesc_process_can_frame_internal(uint32_t id, uint8_t *data, uint8_t 
 /**
  * Send command with CRC and stop byte
  */
-static void vesc_send_command(uint8_t controller_id, uint8_t *data, uint32_t len) {
+static void vesc_send_command(uint8_t controller_id, const uint8_t *data, uint32_t len) {
     uint8_t buffer[256]; // Adjust size as needed
     int32_t index = 0;
 
@@ -799,7 +798,7 @@ uint8_t vesc_get_sender_controller_id(void) {
     return sdk_state.sender_id;
 }
 
-void vesc_process_can_frame(uint32_t id, uint8_t *data, uint8_t len) {
+void vesc_process_can_frame(uint32_t id, const uint8_t *data, uint8_t len) {
     // Add defensive checks for the main entry point
     if (!sdk_state.initialized) {
         return;
@@ -1373,7 +1372,7 @@ void vesc_set_chuck_data(uint8_t controller_id, const vesc_chuck_data_t *chuck_d
 // Response Parsing Functions
 // ============================================================================
 
-bool vesc_parse_get_values(uint8_t *data, uint8_t len, vesc_values_t *values) {
+bool vesc_parse_get_values(const uint8_t *data, uint8_t len, vesc_values_t *values) {
     if (!data || !values || len < 32) {
         // TODO: Implement filtered values
         return false;
@@ -1408,7 +1407,7 @@ bool vesc_parse_get_values(uint8_t *data, uint8_t len, vesc_values_t *values) {
     return true;
 }
 
-bool vesc_parse_motor_rl_response(uint8_t *data, uint8_t len, vesc_motor_rl_response_t *response) {
+bool vesc_parse_motor_rl_response(const uint8_t *data, uint8_t len, vesc_motor_rl_response_t *response) {
     if (!data || !response || len < 12) {
         return false;
     }
@@ -1422,7 +1421,7 @@ bool vesc_parse_motor_rl_response(uint8_t *data, uint8_t len, vesc_motor_rl_resp
     return true;
 }
 
-bool vesc_parse_motor_param_response(uint8_t *data, uint8_t len, vesc_motor_param_response_t *response) {
+bool vesc_parse_motor_param_response(const uint8_t *data, uint8_t len, vesc_motor_param_response_t *response) {
     if (!data || !response || len < 20) {
         return false;
     }
@@ -1441,7 +1440,7 @@ bool vesc_parse_motor_param_response(uint8_t *data, uint8_t len, vesc_motor_para
     return true;
 }
 
-bool vesc_parse_flux_linkage_response(uint8_t *data, uint8_t len, vesc_flux_linkage_response_t *response) {
+bool vesc_parse_flux_linkage_response(const uint8_t *data, uint8_t len, vesc_flux_linkage_response_t *response) {
     if (!data || !response || len < 4) {
         return false;
     }
@@ -1453,7 +1452,7 @@ bool vesc_parse_flux_linkage_response(uint8_t *data, uint8_t len, vesc_flux_link
     return true;
 }
 
-bool vesc_parse_flux_linkage_openloop_response(uint8_t *data, uint8_t len, vesc_flux_linkage_openloop_response_t *response) {
+bool vesc_parse_flux_linkage_openloop_response(const uint8_t *data, uint8_t len, vesc_flux_linkage_openloop_response_t *response) {
     if (!data || !response || len < 13) {
         return false;
     }
@@ -1468,7 +1467,7 @@ bool vesc_parse_flux_linkage_openloop_response(uint8_t *data, uint8_t len, vesc_
     return true;
 }
 
-bool vesc_parse_adc_values(uint8_t *data, uint8_t len, vesc_adc_values_t *values) {
+bool vesc_parse_adc_values(const uint8_t *data, uint8_t len, vesc_adc_values_t *values) {
     if (!data || !values || len < 16) {
         printf("vesc_parse_adc_values: data is NULL or values is NULL or len is less than 16\n");
         return false;
@@ -1485,7 +1484,7 @@ bool vesc_parse_adc_values(uint8_t *data, uint8_t len, vesc_adc_values_t *values
     return true;
 }
 
-bool vesc_parse_ppm_values(uint8_t *data, uint8_t len, vesc_ppm_values_t *values) {
+bool vesc_parse_ppm_values(const uint8_t *data, uint8_t len, vesc_ppm_values_t *values) {
     if (!data || !values || len < 8) {
         printf("vesc_parse_ppm_values: data is NULL or values is NULL or len is less than 8\n");
         return false;
@@ -1500,7 +1499,7 @@ bool vesc_parse_ppm_values(uint8_t *data, uint8_t len, vesc_ppm_values_t *values
     return true;
 }
 
-bool vesc_parse_chuck_values(uint8_t *data, uint8_t len, vesc_chuck_values_t *values) {
+bool vesc_parse_chuck_values(const uint8_t *data, uint8_t len, vesc_chuck_values_t *values) {
     if (!data || !values || len < 5) {
         printf("vesc_parse_chuck_values: data is NULL or values is NULL or len is less than 5\n");
         return false;
@@ -1514,7 +1513,7 @@ bool vesc_parse_chuck_values(uint8_t *data, uint8_t len, vesc_chuck_values_t *va
     return true;
 }
 
-bool vesc_parse_fw_version(uint8_t *data, uint8_t len, vesc_fw_version_t *version) {
+bool vesc_parse_fw_version(const uint8_t *data, uint8_t len, vesc_fw_version_t *version) {
     if (!data || !version || len < 30) {
         printf("vesc_parse_fw_version: data is NULL or version is NULL or len is less than 30\n");
         return false;
@@ -1550,7 +1549,7 @@ bool vesc_parse_fw_version(uint8_t *data, uint8_t len, vesc_fw_version_t *versio
 // Status Message Parsing Functions
 // ============================================================================
 
-bool vesc_parse_status_msg_1(uint8_t *data, uint8_t len, vesc_status_msg_1_t *status) {
+bool vesc_parse_status_msg_1(const uint8_t *data, uint8_t len, vesc_status_msg_1_t *status) {
     if (!data || !status || len < 8) {
         return false;
     }
@@ -1564,7 +1563,7 @@ bool vesc_parse_status_msg_1(uint8_t *data, uint8_t len, vesc_status_msg_1_t *st
     return true;
 }
 
-bool vesc_parse_status_msg_2(uint8_t *data, uint8_t len, vesc_status_msg_2_t *status) {
+bool vesc_parse_status_msg_2(const uint8_t *data, uint8_t len, vesc_status_msg_2_t *status) {
     if (!data || !status || len < 8) {
         return false;
     }
@@ -1577,7 +1576,7 @@ bool vesc_parse_status_msg_2(uint8_t *data, uint8_t len, vesc_status_msg_2_t *st
     return true;
 }
 
-bool vesc_parse_status_msg_3(uint8_t *data, uint8_t len, vesc_status_msg_3_t *status) {
+bool vesc_parse_status_msg_3(const uint8_t *data, uint8_t len, vesc_status_msg_3_t *status) {
     if (!data || !status || len < 8) {
         return false;
     }
@@ -1590,7 +1589,7 @@ bool vesc_parse_status_msg_3(uint8_t *data, uint8_t len, vesc_status_msg_3_t *st
     return true;
 }
 
-bool vesc_parse_status_msg_4(uint8_t *data, uint8_t len, vesc_status_msg_4_t *status) {
+bool vesc_parse_status_msg_4(const uint8_t *data, uint8_t len, vesc_status_msg_4_t *status) {
     if (!data || !status || len < 8) {
         return false;
     }
@@ -1605,7 +1604,7 @@ bool vesc_parse_status_msg_4(uint8_t *data, uint8_t len, vesc_status_msg_4_t *st
     return true;
 }
 
-bool vesc_parse_status_msg_5(uint8_t *data, uint8_t len, vesc_status_msg_5_t *status) {
+bool vesc_parse_status_msg_5(const uint8_t *data, uint8_t len, vesc_status_msg_5_t *status) {
     if (!data || !status || len < 8) {
         return false;
     }
@@ -1618,7 +1617,7 @@ bool vesc_parse_status_msg_5(uint8_t *data, uint8_t len, vesc_status_msg_5_t *st
     return true;
 }
 
-bool vesc_parse_status_msg_6(uint8_t *data, uint8_t len, vesc_status_msg_6_t *status) {
+bool vesc_parse_status_msg_6(const uint8_t *data, uint8_t len, vesc_status_msg_6_t *status) {
     if (!data || !status || len < 8) {
         return false;
     }
@@ -1633,7 +1632,7 @@ bool vesc_parse_status_msg_6(uint8_t *data, uint8_t len, vesc_status_msg_6_t *st
     return true;
 }
 
-bool vesc_parse_pong_response(uint8_t *data, uint8_t len, vesc_pong_response_t *pong) {
+bool vesc_parse_pong_response(const uint8_t *data, uint8_t len, vesc_pong_response_t *pong) {
     if (!data || !pong || len < 1) {
         return false;
     }

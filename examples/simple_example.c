@@ -36,7 +36,7 @@ static uint8_t last_data_len = 0;
 /**
  * Mock CAN send function - in a real application, this would send actual CAN frames
  */
-static bool mock_can_send(uint32_t id, uint8_t *data, uint8_t len) {
+static bool mock_can_send(uint32_t id, const uint8_t *data, uint8_t len) {
     (void)data; // Suppress unused parameter warning
     printf("  [MOCK] CAN TX: ID=0x%03X, Len=%d\n", id, len);
     
@@ -79,7 +79,7 @@ static bool mock_can_send(uint32_t id, uint8_t *data, uint8_t len) {
 /**
  * Response callback function - called when responses are received from VESC controllers
  */
-static void response_callback(uint8_t controller_id, uint8_t command, uint8_t *data, uint8_t len) {
+static void response_callback(uint8_t controller_id, uint8_t command, const uint8_t *data, uint8_t len) {
     printf("  [CALLBACK] VESC#%d response: command=0x%02X, len=%d\n", 
            controller_id, command, len);
     
