@@ -201,6 +201,31 @@ typedef struct {
 } vesc_values_t;
 
 typedef struct {
+    float temp_fet_filtered;
+    float temp_motor_filtered;
+    float current_tot;
+    float current_in_tot;
+    float duty_cycle_now;
+    float rpm;
+    float speed;
+    float input_voltage_filtered;
+    float battery_level;
+    float ah_tot;
+    float ah_charge_tot;
+    float wh_tot;
+    float wh_charge_tot;
+    float distance;
+    float distance_abs;
+    float pid_pos_now;
+    uint8_t fault;
+    uint8_t second_motor_id;
+    uint8_t num_vescs;
+    float wh_batt_left;
+    uint32_t odometer;
+    uint32_t system_time_ms;
+} vesc_values_setup_t;
+
+typedef struct {
     float resistance;         // Motor resistance (Ω)
     float inductance;         // Motor inductance (microhenryH)
     float ld_lq_diff;         // Ld-Lq difference (microhenryH)
@@ -526,6 +551,14 @@ void vesc_can_update_baud_all(uint16_t kbits, uint16_t delay_msec);
 void vesc_get_values(uint8_t controller_id);
 
 /**
+ * Get setup status values
+ *
+ * @param controller_id VESC controller ID (0-255)
+ */
+void vesc_get_values_setup(uint8_t controller_id);
+
+
+/**
  * Get MCC config
  * 
  * @param controller_id VESC controller ID (0-255)
@@ -582,6 +615,8 @@ void vesc_get_fw_version(uint8_t controller_id);
  */
 void vesc_ping(uint8_t controller_id);
 
+
+
 // ============================================================================
 // Response Parsing Functions
 // ============================================================================
@@ -595,6 +630,16 @@ void vesc_ping(uint8_t controller_id);
  * @return true on success, false on failure
  */
 bool vesc_parse_get_values(const uint8_t *data, uint8_t len, vesc_values_t *values);
+
+/**
+ * Parse GET_VALUES_SETUP response
+ *
+ * @param data Response data
+ * @param len Data length
+ * @param values Pointer to values_setup structure
+ * @return true on success, false on failure
+ */
+bool vesc_parse_get_values_setup(const uint8_t *data, uint8_t len, vesc_values_setup_t *values);
 
 /**
  * Parse motor R/L detection response

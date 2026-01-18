@@ -177,6 +177,7 @@ static const char* vesc_debug_get_command_name(uint8_t command) {
     switch (command) {
         case COMM_FW_VERSION: return "FW_VERSION";
         case COMM_GET_VALUES: return "GET_VALUES";
+        case COMM_GET_VALUES_SETUP: return "GET_VALUES_SETUP";
         case COMM_GET_MCC_CONFIG: return "GET_MCC_CONFIG";
         case COMM_REBOOT: return "REBOOT";
         case COMM_DETECT_MOTOR_R_L: return "DETECT_MOTOR_R_L";
@@ -1206,6 +1207,31 @@ void vesc_get_values(uint8_t controller_id) {
     vesc_send_command(controller_id, buffer, 1);
 }
 
+
+void vesc_get_values_setup(uint8_t controller_id) {
+    uint8_t buffer[1];
+    buffer[0] = COMM_GET_VALUES_SETUP;
+
+    // Debug output for command
+    if (vesc_debug_category_enabled(VESC_DEBUG_COMMANDS)) {
+        const char *timestamp = debug_state.config.enable_timestamps ? vesc_debug_get_timestamp() : "";
+        vesc_debug_output("[%s] Command: VESC#%d GET_VALUES_SETUP\n",
+                         timestamp, controller_id);
+
+        if (debug_state.config.level >= VESC_DEBUG_DETAILED) {
+            vesc_debug_hex_dump("  Command Data: ", buffer, 1);
+        }
+
+        // Update statistics
+        if (debug_state.config.enable_statistics) {
+            debug_state.stats.command_count++;
+        }
+    }
+
+    // Use vesc_send_command to handle CRC and stop byte
+    vesc_send_command(controller_id, buffer, 1);
+}
+
 void vesc_get_mcc_config(uint8_t controller_id) {
     uint8_t buffer[1];
     buffer[0] = COMM_GET_MCC_CONFIG;
@@ -1407,6 +1433,37 @@ bool vesc_parse_get_values(const uint8_t *data, uint8_t len, vesc_values_t *valu
     values->status = data[index++];
     
     return true;
+}
+
+bool vesc_parse_get_values_setup(const uint8_t *data, uint8_t len, vesc_values_setup_t *values) {
+    if (!data || !values || len < 32) {
+        // TODO: Implement filtered values
+        return false;
+    }
+    int32_t index = 1;
+
+    values->temp_fet_filtered = vesc_buffer_get_float16(data, 1e1f, &index);
+    values->temp_motor_filtered = vesc_buffer_get_float16(data, 1e1f, &index);
+    values->current_tot = vesc_buffer_get_float32(data, 1e2f, &index);
+    values->current_in_tot = vesc_buffer_get_float32(data, 1e2f, &index);
+    values->duty_cycle_now = vesc_buffer_get_float16(data, 1e3f, &index);
+    values->rpm = vesc_buffer_get_float32(data, 1e0f, &index);
+    values->speed = vesc_buffer_get_float32(data, 1e3f, &index);
+    values->input_voltage_filtered = vesc_buffer_get_float16(data, 1e1f, &index);
+    values->battery_level = vesc_buffer_get_float16(data, 1e3f, &index);
+    values->ah_tot = vesc_buffer_get_float32(data, 1e4f, &index);
+    values->ah_charge_tot = vesc_buffer_get_float32(data, 1e4f, &index);
+    values->wh_tot = vesc_buffer_get_float32(data, 1e4f, &index);
+    values->wh_charge_tot = vesc_buffer_get_float32(data, 1e4f, &index);
+    values->distance = vesc_buffer_get_float32(data, 1e3f, &index);
+    values->distance_abs = vesc_buffer_get_float32(data, 1e3f, &index);
+    values->pid_pos_now = vesc_buffer_get_float32(data, 1e6f, &index);
+    values->fault = data[index++];
+    values->second_motor_id = data[index++];
+    values->num_vescs = data[index++];
+    values->wh_batt_left = vesc_buffer_get_float32(data, 1e3f, &index);
+    values->odometer = vesc_buffer_get_uint32(data, &index);
+    values->system_time_ms = vesc_buffer_get_uint32(data, &index);
 }
 
 bool vesc_parse_motor_rl_response(const uint8_t *data, uint8_t len, vesc_motor_rl_response_t *response) {
