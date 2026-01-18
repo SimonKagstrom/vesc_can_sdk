@@ -1219,7 +1219,7 @@ void vesc_get_values_setup(uint8_t controller_id) {
                          timestamp, controller_id);
 
         if (debug_state.config.level >= VESC_DEBUG_DETAILED) {
-            vesc_debug_hex_dump("  Command Data: ", buffer, 1);
+            vesc_debug_hex_dump("  Command Data: ", buffer, sizeof(buffer));
         }
 
         // Update statistics
@@ -1230,6 +1230,34 @@ void vesc_get_values_setup(uint8_t controller_id) {
 
     // Use vesc_send_command to handle CRC and stop byte
     vesc_send_command(controller_id, buffer, 1);
+}
+
+void vesc_get_values_setup_selective(uint8_t controller_id, uint32_t mask)
+{
+    uint8_t buffer[5];
+    int32_t index = 1;
+
+    buffer[0] = COMM_GET_VALUES_SETUP_SELECTIVE;
+    vesc_buffer_append_uint32(buffer, mask, &index);
+
+    // Debug output for command
+    if (vesc_debug_category_enabled(VESC_DEBUG_COMMANDS)) {
+        const char *timestamp = debug_state.config.enable_timestamps ? vesc_debug_get_timestamp() : "";
+        vesc_debug_output("[%s] Command: VESC#%d GET_VALUES_SETUP_SELECTIVE\n",
+                         timestamp, controller_id);
+
+        if (debug_state.config.level >= VESC_DEBUG_DETAILED) {
+            vesc_debug_hex_dump("  Command Data: ", buffer, sizeof(buffer));
+        }
+
+        // Update statistics
+        if (debug_state.config.enable_statistics) {
+            debug_state.stats.command_count++;
+        }
+    }
+
+    // Use vesc_send_command to handle CRC and stop byte
+    vesc_send_command(controller_id, buffer, sizeof(buffer));
 }
 
 void vesc_get_mcc_config(uint8_t controller_id) {

@@ -97,6 +97,7 @@ typedef struct {
 #define COMM_GET_DECODED_CHUK      33
 #define COMM_FORWARD_CAN           34
 #define COMM_SET_CHUCK_DATA        35
+#define COMM_GET_VALUES_SETUP_SELECTIVE 51
 #define COMM_CAN_UPDATE_BAUD_ALL   158
 
 // ============================================================================
@@ -169,6 +170,33 @@ typedef struct {
 #define CAN_PACKET_GNSS_ALT_SPEED_HDOP             62
 #define CAN_PACKET_UPDATE_BAUD                     63
 #define CAN_PACKET_MAKE_ENUM_32_BITS               0xFFFFFFFF,
+
+typedef enum {
+    SETUP_VALUE_TEMP_FET_FILTERED = (uint32_t)1 << 0,
+    SETUP_VALUE_TEMP_MOTOR_FILTERED = (uint32_t)1 << 1,
+    SETUP_VALUE_CURRENT_TOT = (uint32_t)1 << 2,
+    SETUP_VALUE_CURRENT_IN_TOT = (uint32_t)1 << 3,
+    SETUP_VALUE_DUTY_CYCLE_NOW = (uint32_t)1 << 4,
+    SETUP_VALUE_RPM = (uint32_t)1 << 5,
+    SETUP_VALUE_SPEED = (uint32_t)1 << 6,
+    SETUP_VALUE_INPUT_VOLTAGE_FILTERED = (uint32_t)1 << 7,
+    SETUP_VALUE_BATTERY_LEVEL = (uint32_t)1 << 8,
+    SETUP_VALUE_AH_TOT = (uint32_t)1 << 9,
+    SETUP_VALUE_AH_CHARGE_TOT = (uint32_t)1 << 10,
+    SETUP_VALUE_WH_TOT = (uint32_t)1 << 11,
+    SETUP_VALUE_WH_CHARGE_TOT = (uint32_t)1 << 12,
+    SETUP_VALUE_DISTANCE = (uint32_t)1 << 13,
+    SETUP_VALUE_DISTANCE_ABS = (uint32_t)1 << 14,
+    SETUP_VALUE_PID_POS_NOW = (uint32_t)1 << 15,
+    SETUP_VALUE_FAULT = (uint32_t)1 << 16,
+    SETUP_VALUE_SECOND_MOTOR_CONTROLLER_ID = (uint32_t)1 << 17,
+    SETUP_VALUE_NUM_VESCS = (uint32_t)1 << 18,
+    SETUP_VALUE_WH_BATT_LEFT = (uint32_t)1 << 19,
+    SETUP_VALUE_ODOMETER = (uint32_t)1 << 20,
+    SETUP_VALUE_SYSTEM_TIME_MS = (uint32_t)1 << 21
+} vesc_setup_value_index_t;
+
+
 // ============================================================================
 // Response Structures
 // ============================================================================
@@ -556,6 +584,13 @@ void vesc_get_values(uint8_t controller_id);
  * @param controller_id VESC controller ID (0-255)
  */
 void vesc_get_values_setup(uint8_t controller_id);
+
+/**
+ * Get setup status values
+ *
+ * @param controller_id VESC controller ID (0-255)
+ */
+void vesc_get_values_setup_selective(uint8_t controller_id, uint32_t mask);
 
 
 /**
