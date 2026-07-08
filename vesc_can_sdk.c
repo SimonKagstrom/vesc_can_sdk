@@ -1492,6 +1492,8 @@ bool vesc_parse_get_values_setup(const uint8_t *data, uint8_t len, vesc_values_s
     values->wh_batt_left = vesc_buffer_get_float32(data, 1e3f, &index);
     values->odometer = vesc_buffer_get_uint32(data, &index);
     values->system_time_ms = vesc_buffer_get_uint32(data, &index);
+
+    return true;
 }
 
 bool vesc_parse_motor_rl_response(const uint8_t *data, uint8_t len, vesc_motor_rl_response_t *response) {
