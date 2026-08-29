@@ -44,6 +44,9 @@
 #define VESC_RX_BUFFER_SIZE 256
 #define VESC_RX_BUFFER_NUM 4
 
+// 12 floats, 1 byte, 1 byte for the id
+#define MCCONF_DATA_SIZE (12 * sizeof(float) + 1 + 1)
+
 typedef struct {
     uint8_t buffer[VESC_RX_BUFFER_SIZE];
     int32_t offset;
@@ -1181,7 +1184,32 @@ void vesc_can_update_baud_all(uint16_t kbits, uint16_t delay_msec) {
 
 void vesc_can_set_mcconf_temp(uint8_t controller_id, const vesc_mcconf_t *mcconf)
 {
-    // NYI
+    uint8_t buffer[MCCONF_DATA_SIZE + 4];
+    int32_t index = 0;
+
+    buffer[index++] = COMM_SET_MCCONF_TEMP;
+    buffer[index++] = 0; // Store
+    buffer[index++] = 0; // forward_can
+    buffer[index++] = 0; // ack
+    buffer[index++] = 0; // divide_by_controllers
+
+    vesc_buffer_append_float32(buffer, mcconf->l_current_min_scale, 1.0f, &index);
+    vesc_buffer_append_float32(buffer, mcconf->l_current_max_scale, 1.0f, &index);
+
+    vesc_buffer_append_float32(buffer, mcconf->l_min_erpm, 1.0f, &index);
+    vesc_buffer_append_float32(buffer, mcconf->l_max_erpm, 1.0f, &index);
+
+    vesc_buffer_append_float32(buffer, mcconf->l_min_duty, 1.0f, &index);
+    vesc_buffer_append_float32(buffer, mcconf->l_max_duty, 1.0f, &index);
+
+    vesc_buffer_append_float32(buffer, mcconf->l_watt_min, 1.0f, &index);
+    vesc_buffer_append_float32(buffer, mcconf->l_watt_max, 1.0f, &index);
+
+    vesc_buffer_append_float32(buffer, mcconf->l_in_current_min, 1.0f, &index);
+    vesc_buffer_append_float32(buffer, mcconf->l_in_current_max, 1.0f, &index);
+
+
+    vesc_can_send_packet(controller_id, buffer, index);
 }
 
 // ============================================================================
@@ -1529,7 +1557,7 @@ bool vesc_parse_get_values_setup(const uint8_t *data, uint8_t len, vesc_values_s
 
 bool vesc_parse_mcconf(const uint8_t *data, uint8_t len, vesc_mcconf_t *mcconf)
 {
-    if (!data || !mcconf || len < 12 * sizeof(float) + 1) {
+    if (!data || !mcconf || len < MCCONF_DATA_SIZE) {
         return false;
     }
     int32_t index = 1;

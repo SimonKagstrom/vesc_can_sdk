@@ -98,6 +98,8 @@ typedef struct {
 #define COMM_FORWARD_CAN           34
 #define COMM_SET_CHUCK_DATA        35
 #define COMM_SET_MCCONF_TEMP       48
+// Same as above, but m/s speed instead of erpm
+#define COMM_SET_MCCONF_TEMP_SETUP 49
 #define COMM_GET_VALUES_SETUP_SELECTIVE 51
 #define COMM_GET_MCCONF_TEMP       91
 #define COMM_CAN_UPDATE_BAUD_ALL   158
