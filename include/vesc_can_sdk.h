@@ -97,7 +97,9 @@ typedef struct {
 #define COMM_GET_DECODED_CHUK      33
 #define COMM_FORWARD_CAN           34
 #define COMM_SET_CHUCK_DATA        35
+#define COMM_SET_MCCONF_TEMP       48
 #define COMM_GET_VALUES_SETUP_SELECTIVE 51
+#define COMM_GET_MCCONF_TEMP       91
 #define COMM_CAN_UPDATE_BAUD_ALL   158
 
 // ============================================================================
@@ -252,6 +254,22 @@ typedef struct {
     uint32_t odometer;
     uint32_t system_time_ms;
 } vesc_values_setup_t;
+
+typedef struct {
+    float l_current_min_scale;
+    float l_current_max_scale;
+    float l_min_erpm;
+    float l_max_erpm;
+    float l_min_duty;
+    float l_max_duty;
+    float l_watt_min;
+    float l_watt_max;
+    float l_in_current_min;
+    float l_in_current_max;
+    uint8_t si_motor_poles;
+    float si_gear_ratio;
+    float si_wheel_diameter;
+} vesc_mcconf_t;
 
 typedef struct {
     float resistance;         // Motor resistance (Ω)
@@ -567,6 +585,16 @@ void vesc_detect_motor_flux_linkage_openloop(uint8_t controller_id, float curren
  */
 void vesc_can_update_baud_all(uint16_t kbits, uint16_t delay_msec);
 
+/**
+ * Set the MCC configuration for the VESC controller.
+ *
+ * Uses COMM_SET_MCCONF_TEMP, sets configuration settings to RAM.
+ *
+ * @param controller_id VESC controller ID (0-255)
+ * @param mcconf_temp Pointer to the MCC configuration structure
+ */
+void vesc_can_set_mcconf_temp(uint8_t controller_id, const vesc_mcconf_t *mcconf_temp);
+
 // ============================================================================
 // Status Functions
 // ============================================================================
@@ -591,6 +619,13 @@ void vesc_get_values_setup(uint8_t controller_id);
  * @param controller_id VESC controller ID (0-255)
  */
 void vesc_get_values_setup_selective(uint8_t controller_id, uint32_t mask);
+
+/**
+ * Get MCC configuration from RAM
+ *
+ * @param controller_id VESC controller ID (0-255)
+ */
+void vesc_get_mcconf_temp(uint8_t controller_id);
 
 
 /**
@@ -675,6 +710,16 @@ bool vesc_parse_get_values(const uint8_t *data, uint8_t len, vesc_values_t *valu
  * @return true on success, false on failure
  */
 bool vesc_parse_get_values_setup(const uint8_t *data, uint8_t len, vesc_values_setup_t *values);
+
+/**
+ * Parse GET_MCCONF response
+ * 
+ * @param data Response data
+ * @param len Data length
+ * @param mcconf Pointer to MCC configuration structure
+ * @return true on success, false on failure
+ */
+bool vesc_parse_mcconf(const uint8_t *data, uint8_t len, vesc_mcconf_t *mcconf);
 
 /**
  * Parse motor R/L detection response

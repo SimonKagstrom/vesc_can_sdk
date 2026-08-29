@@ -1179,6 +1179,11 @@ void vesc_can_update_baud_all(uint16_t kbits, uint16_t delay_msec) {
     vesc_can_send_packet(can_id, buffer, index);
 }
 
+void vesc_can_set_mcconf_temp(uint8_t controller_id, const vesc_mcconf_t *mcconf)
+{
+    // NYI
+}
+
 // ============================================================================
 // Status Functions
 // ============================================================================
@@ -1259,6 +1264,32 @@ void vesc_get_values_setup_selective(uint8_t controller_id, uint32_t mask)
     // Use vesc_send_command to handle CRC and stop byte
     vesc_send_command(controller_id, buffer, sizeof(buffer));
 }
+
+void vesc_get_mcconf_temp(uint8_t controller_id)
+{
+    uint8_t buffer[1];
+    buffer[0] = COMM_GET_MCCONF_TEMP;
+
+    // Debug output for command
+    if (vesc_debug_category_enabled(VESC_DEBUG_COMMANDS)) {
+        const char *timestamp = debug_state.config.enable_timestamps ? vesc_debug_get_timestamp() : "";
+        vesc_debug_output("[%s] Command: VESC#%d GET_MCCONF_TEMP\n",
+                         timestamp, controller_id);
+
+        if (debug_state.config.level >= VESC_DEBUG_DETAILED) {
+            vesc_debug_hex_dump("  Command Data: ", buffer, sizeof(buffer));
+        }
+
+        // Update statistics
+        if (debug_state.config.enable_statistics) {
+            debug_state.stats.command_count++;
+        }
+    }
+
+    // Use vesc_send_command to handle CRC and stop byte
+    vesc_send_command(controller_id, buffer, 1);
+}
+
 
 void vesc_get_mcc_config(uint8_t controller_id) {
     uint8_t buffer[1];
@@ -1492,6 +1523,30 @@ bool vesc_parse_get_values_setup(const uint8_t *data, uint8_t len, vesc_values_s
     values->wh_batt_left = vesc_buffer_get_float32(data, 1e3f, &index);
     values->odometer = vesc_buffer_get_uint32(data, &index);
     values->system_time_ms = vesc_buffer_get_uint32(data, &index);
+
+    return true;
+}
+
+bool vesc_parse_mcconf(const uint8_t *data, uint8_t len, vesc_mcconf_t *mcconf)
+{
+    if (!data || !mcconf || len < 12 * sizeof(float) + 1) {
+        return false;
+    }
+    int32_t index = 1;
+
+    mcconf->l_current_min_scale = vesc_buffer_get_float32(data, 1.0f, &index);
+    mcconf->l_current_max_scale = vesc_buffer_get_float32(data, 1.0f, &index);
+    mcconf->l_min_erpm = vesc_buffer_get_float32(data, 1.0f, &index);
+    mcconf->l_max_erpm = vesc_buffer_get_float32(data, 1.0f, &index);
+    mcconf->l_min_duty = vesc_buffer_get_float32(data, 1.0f, &index);
+    mcconf->l_max_duty = vesc_buffer_get_float32(data, 1.0f, &index);
+    mcconf->l_watt_min = vesc_buffer_get_float32(data, 1.0f, &index);
+    mcconf->l_watt_max = vesc_buffer_get_float32(data, 1.0f, &index);
+    mcconf->l_in_current_min = vesc_buffer_get_float32(data, 1.0f, &index);
+    mcconf->l_in_current_max = vesc_buffer_get_float32(data, 1.0f, &index);
+    mcconf->si_motor_poles = (uint8_t)data[index++];
+    mcconf->si_gear_ratio = vesc_buffer_get_float32(data, 1.0f, &index);
+    mcconf->si_wheel_diameter = vesc_buffer_get_float32(data, 1.0f, &index);
 
     return true;
 }
