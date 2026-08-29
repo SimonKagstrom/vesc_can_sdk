@@ -1187,29 +1187,29 @@ void vesc_can_set_mcconf_temp(uint8_t controller_id, const vesc_mcconf_t *mcconf
     uint8_t buffer[MCCONF_DATA_SIZE + 4];
     int32_t index = 0;
 
-    buffer[index++] = COMM_SET_MCCONF_TEMP;
+    buffer[index++] = COMM_SET_MCCONF_TEMP_SETUP;
     buffer[index++] = 0; // Store
     buffer[index++] = 0; // forward_can
     buffer[index++] = 0; // ack
     buffer[index++] = 0; // divide_by_controllers
 
-    vesc_buffer_append_float32(buffer, mcconf->l_current_min_scale, 1.0f, &index);
-    vesc_buffer_append_float32(buffer, mcconf->l_current_max_scale, 1.0f, &index);
+    vesc_buffer_append_float32_auto(buffer, mcconf->l_current_min_scale, &index);
+    vesc_buffer_append_float32_auto(buffer, mcconf->l_current_max_scale, &index);
 
-    vesc_buffer_append_float32(buffer, mcconf->l_min_erpm, 1.0f, &index);
-    vesc_buffer_append_float32(buffer, mcconf->l_max_erpm, 1.0f, &index);
+    vesc_buffer_append_float32_auto(buffer, mcconf->l_min_erpm, &index);
+    vesc_buffer_append_float32_auto(buffer, mcconf->l_max_erpm, &index);
 
-    vesc_buffer_append_float32(buffer, mcconf->l_min_duty, 1.0f, &index);
-    vesc_buffer_append_float32(buffer, mcconf->l_max_duty, 1.0f, &index);
+    vesc_buffer_append_float32_auto(buffer, mcconf->l_min_duty, &index);
+    vesc_buffer_append_float32_auto(buffer, mcconf->l_max_duty, &index);
 
-    vesc_buffer_append_float32(buffer, mcconf->l_watt_min, 1.0f, &index);
-    vesc_buffer_append_float32(buffer, mcconf->l_watt_max, 1.0f, &index);
+    vesc_buffer_append_float32_auto(buffer, mcconf->l_watt_min, &index);
+    vesc_buffer_append_float32_auto(buffer, mcconf->l_watt_max, &index);
 
-    vesc_buffer_append_float32(buffer, mcconf->l_in_current_min, 1.0f, &index);
-    vesc_buffer_append_float32(buffer, mcconf->l_in_current_max, 1.0f, &index);
+    vesc_buffer_append_float32_auto(buffer, mcconf->l_in_current_min, &index);
+    vesc_buffer_append_float32_auto(buffer, mcconf->l_in_current_max, &index);
 
 
-    vesc_can_send_packet(controller_id, buffer, index);
+    vesc_send_command(controller_id, buffer, index);
 }
 
 // ============================================================================
@@ -1560,21 +1560,22 @@ bool vesc_parse_mcconf(const uint8_t *data, uint8_t len, vesc_mcconf_t *mcconf)
     if (!data || !mcconf || len < MCCONF_DATA_SIZE) {
         return false;
     }
+    printf("The packet length is %d, expected at least %d\n", len, MCCONF_DATA_SIZE);
     int32_t index = 1;
 
-    mcconf->l_current_min_scale = vesc_buffer_get_float32(data, 1.0f, &index);
-    mcconf->l_current_max_scale = vesc_buffer_get_float32(data, 1.0f, &index);
-    mcconf->l_min_erpm = vesc_buffer_get_float32(data, 1.0f, &index);
-    mcconf->l_max_erpm = vesc_buffer_get_float32(data, 1.0f, &index);
-    mcconf->l_min_duty = vesc_buffer_get_float32(data, 1.0f, &index);
-    mcconf->l_max_duty = vesc_buffer_get_float32(data, 1.0f, &index);
-    mcconf->l_watt_min = vesc_buffer_get_float32(data, 1.0f, &index);
-    mcconf->l_watt_max = vesc_buffer_get_float32(data, 1.0f, &index);
-    mcconf->l_in_current_min = vesc_buffer_get_float32(data, 1.0f, &index);
-    mcconf->l_in_current_max = vesc_buffer_get_float32(data, 1.0f, &index);
+    mcconf->l_current_min_scale = vesc_buffer_get_float32_auto(data, &index);
+    mcconf->l_current_max_scale = vesc_buffer_get_float32_auto(data, &index);
+    mcconf->l_min_erpm = vesc_buffer_get_float32_auto(data, &index);
+    mcconf->l_max_erpm = vesc_buffer_get_float32_auto(data, &index);
+    mcconf->l_min_duty = vesc_buffer_get_float32_auto(data, &index);
+    mcconf->l_max_duty = vesc_buffer_get_float32_auto(data, &index);
+    mcconf->l_watt_min = vesc_buffer_get_float32_auto(data, &index);
+    mcconf->l_watt_max = vesc_buffer_get_float32_auto(data, &index);
+    mcconf->l_in_current_min = vesc_buffer_get_float32_auto(data, &index);
+    mcconf->l_in_current_max = vesc_buffer_get_float32_auto(data, &index);
     mcconf->si_motor_poles = (uint8_t)data[index++];
-    mcconf->si_gear_ratio = vesc_buffer_get_float32(data, 1.0f, &index);
-    mcconf->si_wheel_diameter = vesc_buffer_get_float32(data, 1.0f, &index);
+    mcconf->si_gear_ratio = vesc_buffer_get_float32_auto(data, &index);
+    mcconf->si_wheel_diameter = vesc_buffer_get_float32_auto(data, &index);
 
     return true;
 }
