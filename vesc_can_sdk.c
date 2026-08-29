@@ -1560,7 +1560,7 @@ bool vesc_parse_mcconf(const uint8_t *data, uint8_t len, vesc_mcconf_t *mcconf)
     if (!data || !mcconf || len < MCCONF_DATA_SIZE) {
         return false;
     }
-    printf("The packet length is %d, expected at least %d\n", len, MCCONF_DATA_SIZE);
+
     int32_t index = 1;
 
     mcconf->l_current_min_scale = vesc_buffer_get_float32_auto(data, &index);
