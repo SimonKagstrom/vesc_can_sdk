@@ -597,6 +597,18 @@ void vesc_can_update_baud_all(uint16_t kbits, uint16_t delay_msec);
  */
 void vesc_can_set_mcconf_temp(uint8_t controller_id, const vesc_mcconf_t *mcconf_temp);
 
+
+/**
+ * Set the MCC configuration for the VESC controller.
+ *
+ * Uses COMM_SET_MCCONF_TEMP_SETUP, sets configuration settings to RAM. The
+ * _SETUP means RPM settings use m/s instead of erpm.
+ *
+ * @param controller_id VESC controller ID (0-255)
+ * @param mcconf_temp Pointer to the MCC configuration structure
+ */
+void vesc_can_set_mcconf_temp_setup(uint8_t controller_id, const vesc_mcconf_t *mcconf_temp);
+
 // ============================================================================
 // Status Functions
 // ============================================================================

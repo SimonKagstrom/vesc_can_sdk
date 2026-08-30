@@ -1182,12 +1182,12 @@ void vesc_can_update_baud_all(uint16_t kbits, uint16_t delay_msec) {
     vesc_can_send_packet(can_id, buffer, index);
 }
 
-void vesc_can_set_mcconf_temp(uint8_t controller_id, const vesc_mcconf_t *mcconf)
+static void vesc_can_set_mcconf_temp_common(uint8_t command, uint8_t controller_id, const vesc_mcconf_t *mcconf)
 {
     uint8_t buffer[MCCONF_DATA_SIZE + 4];
     int32_t index = 0;
 
-    buffer[index++] = COMM_SET_MCCONF_TEMP_SETUP;
+    buffer[index++] = command;
     buffer[index++] = 0; // Store
     buffer[index++] = 0; // forward_can
     buffer[index++] = 0; // ack
@@ -1210,6 +1210,16 @@ void vesc_can_set_mcconf_temp(uint8_t controller_id, const vesc_mcconf_t *mcconf
 
 
     vesc_send_command(controller_id, buffer, index);
+}
+
+void vesc_can_set_mcconf_temp(uint8_t controller_id, const vesc_mcconf_t *mcconf)
+{
+    vesc_can_set_mcconf_temp_common(COMM_SET_MCCONF_TEMP, controller_id, mcconf);
+}
+
+void vesc_can_set_mcconf_temp_setup(uint8_t controller_id, const vesc_mcconf_t *mcconf)
+{
+    vesc_can_set_mcconf_temp_common(COMM_SET_MCCONF_TEMP_SETUP, controller_id, mcconf);
 }
 
 // ============================================================================
